@@ -1,0 +1,10 @@
+{
+  "name": "mega_sync_vpinfe",
+  "display_name": "MEGA Table Sync",
+  "version": "0.1.0",
+  "author": "bennball3",
+  "source": "https://github.com/bennball3/mega_sync_vpinfe",
+  "requires_platform": 1,
+  "scopes": ["games:read", "uploads:write"],
+  "capabilities": ["config:own", "fs:read", "net:outbound", "proc:spawn", "ui:mount"]
+}
