@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path, PurePosixPath
@@ -32,19 +33,30 @@ def _when(text: str) -> str:
 
 
 def _run(exe: str, args: list[str], timeout: float = SHORT) -> tuple[int, str]:
-    try:
-        done = subprocess.run([exe, *args], capture_output=True, stdin=subprocess.DEVNULL,
-                              timeout=timeout, creationflags=CREATE_NO_WINDOW,
-                              text=True, encoding="utf-8", errors="replace")
-    except FileNotFoundError as exc:
-        raise MegaError(f"MEGAcmd not found at {exe}") from exc
-    except OSError as exc:
-        raise MegaError(str(exc)) from exc
-    except subprocess.TimeoutExpired as exc:
-        raise MegaError("MEGAcmd timed out") from exc
-    text = "\n".join(line for line in (done.stdout + "\n" + done.stderr).splitlines()
+    # Output goes to a temporary file, not a pipe. When MEGAcmdServer is not running,
+    # MEGAclient starts it and the server inherits the output handles. With a pipe, reading
+    # waits for the server to close it, which it never does, so the call hangs for good.
+    # A file only needs MEGAclient itself to exit.
+    with tempfile.TemporaryFile() as out:
+        try:
+            process = subprocess.Popen([exe, *args], stdout=out, stderr=subprocess.STDOUT,
+                                       stdin=subprocess.DEVNULL,
+                                       creationflags=CREATE_NO_WINDOW)
+        except FileNotFoundError as exc:
+            raise MegaError(f"MEGAcmd not found at {exe}") from exc
+        except OSError as exc:
+            raise MegaError(str(exc)) from exc
+        try:
+            code = process.wait(timeout)
+        except subprocess.TimeoutExpired as exc:
+            process.kill()
+            process.wait()
+            raise MegaError("MEGAcmd timed out") from exc
+        out.seek(0)
+        raw = out.read().decode("utf-8", errors="replace")
+    text = "\n".join(line for line in raw.splitlines()
                      if line.strip() and not any(one in line for one in NOISE))
-    return done.returncode, text
+    return code, text
 
 
 def is_megacmd(exe: str) -> bool:
