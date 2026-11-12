@@ -2,7 +2,8 @@
 
 At startup the extension lists the zips in the MEGA folder, hands each new one to VPinFE's own
 import (which matches it and fetches artwork), and moves it to `imported` or `rejected` in MEGA.
-The MEGA folder is the only record of what has been done.
+The MEGA folder is the record of what is still to do; `cache/history.json` keeps the list of
+what was imported or rejected, even after those zips are deleted from MEGA.
 """
 
 import logging

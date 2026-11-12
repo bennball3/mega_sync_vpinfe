@@ -46,7 +46,7 @@ level. The extension creates and fills the `imported` and `rejected` folders.
 
 ## How it works
 
-The MEGA folder is the only record of what was done. Anything left in it is still to process.
+The MEGA folder is the record of what is still to do. Anything left in it is still to process.
 
 - Installed zips move to `imported` inside the folder.
 - Zips for tables already in your library move to `rejected` without downloading. Existing
@@ -57,8 +57,10 @@ The MEGA folder is the only record of what was done. Anything left in it is stil
 Files in a bundle that VPinFE doesn't import, such as ROM settings, are copied into the game
 folder at their bundle paths. Existing files are never overwritten.
 
-The extension also keeps a small display-only history in `cache/history.json`, with when each zip
-was imported or rejected and its last error. Deleting it loses only those times.
+The extension keeps a list of every imported and rejected zip in `cache/history.json`, with its
+size, when it was handled and its last error. To save space in MEGA, you can delete zips from
+`imported` and `rejected`; they stay in the MEGA Sync list. Deleting `cache/history.json` clears
+those rows from the list but doesn't change what gets synced.
 
 ## Settings
 

@@ -1,8 +1,8 @@
 """What this extension has done to each zip, kept in `cache/history.json` beside the code.
 
-It is a record for display only (when a zip was imported or rejected, and the last error). The
-MEGA folders stay the source of truth for what is still to do, so losing this file loses
-nothing but those times.
+It is the lasting list of imported and rejected zips (name, size, when, last error), so the MEGA
+Sync list keeps them after the zips are deleted from MEGA. The MEGA folder stays the source of
+truth for what is still to do, so losing this file empties those rows but changes no sync.
 """
 
 from __future__ import annotations
@@ -40,9 +40,14 @@ class History:
         with self._lock:
             return dict(self._rows.get(handle, {}))
 
-    def done(self, handle: str, name: str, outcome: str) -> None:
+    def all(self) -> dict[str, dict]:
+        with self._lock:
+            return {handle: dict(row) for handle, row in self._rows.items()}
+
+    def done(self, handle: str, name: str, outcome: str, size: int = 0) -> None:
         """The zip was imported or rejected: record when, and clear any earlier error."""
-        self._put(handle, {"name": name, "outcome": outcome, "at": _now(), "error": ""})
+        self._put(handle, {"name": name, "outcome": outcome, "at": _now(), "error": "",
+                           "size": size})
 
     def failed(self, handle: str, name: str, error: str) -> None:
         """The zip failed this run. An earlier import time is kept."""
@@ -50,6 +55,7 @@ class History:
             before = self._rows.get(handle, {})
         self._put(handle, {"name": name, "outcome": before.get("outcome", ""),
                            "at": before.get("at", ""), "error": error,
+                           "size": before.get("size", 0),
                            "failed_at": _now()})
 
     def _put(self, handle: str, row: dict) -> None:

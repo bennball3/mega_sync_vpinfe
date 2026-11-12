@@ -1,5 +1,6 @@
-"""The sync job. The MEGA folder is the only record: what is left in it is still to do.
-This run's results and errors are held in memory only."""
+"""The sync job. The MEGA folder is the record of what is still to do: what is left in it is
+waiting. `cache/history.json` keeps every imported or rejected zip, so the list keeps showing
+them after they are deleted from MEGA. This run's results and errors are held in memory."""
 
 from __future__ import annotations
 
@@ -54,6 +55,17 @@ class Sync:
                 found += [{**one, "state": state} for one in mega.list_zips(exe, folder)]
             except mega.MegaError as exc:
                 logger.warning("Could not list %s: %s", folder, exc)
+        handles = {one["handle"] for one in found}
+        names = {one["name"].lower() for one in found}
+        for handle, kept in self.history.all().items():
+            outcome, name = kept.get("outcome"), kept.get("name", "")
+            if outcome not in ("imported", "rejected") or not name:
+                continue
+            if handle in handles or name.lower() in names:
+                continue  # still in MEGA, or the same zip was uploaded again
+            names.add(name.lower())
+            found.append({"handle": handle, "name": name, "size": kept.get("size") or 0,
+                          "date": kept.get("at", ""), "state": outcome, "gone": True})
         self._rows = (time.time(), found)
         return found
 
@@ -153,7 +165,7 @@ class Sync:
             try:
                 mega.move(exe, one["handle"], one["name"], folder)
                 self.results[one["name"]] = outcome
-                self.history.done(one["handle"], one["name"], outcome)
+                self.history.done(one["handle"], one["name"], outcome, one.get("size") or 0)
                 return
             except mega.MegaError as exc:
                 if attempt:

@@ -17,7 +17,9 @@ from VPinFE, so they can't run standalone.
 ## Architecture
 
 - `mega.py`: stateless MEGAclient wrapper (no console window, timeouts).
-- `sync.py`: the job. No local tracking; the MEGA folder (`imported` / `rejected`) is the record.
+- `sync.py`: the job. The MEGA folder is the record of what is waiting; `history.py`
+  (`cache/history.json`) is the lasting list of imported/rejected zips, shown even after the
+  user deletes them from MEGA.
 - `screens.py`: Sync Now action, MEGA Sync list, Needs You rows.
 - `settings.py`: fields and the `check` that refuses a non-MEGAcmd exe.
 - `__init__.py`: wiring and the startup timer (skipped under `--check-extension`).

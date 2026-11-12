@@ -6,6 +6,8 @@ from . import mega, settings
 
 
 def _size(count: int) -> str:
+    if not count:
+        return ""  # history rows from before sizes were kept
     return f"{count / (1024 * 1024):.1f} MB"
 
 
